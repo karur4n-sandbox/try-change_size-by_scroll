@@ -9,8 +9,20 @@ let maskImage: ImageBitmap | undefined = undefined;
 
 let maskScale = 100;
 
+let touchStartY = 0;
+
+const windowWidth = window.innerWidth;
+const windowHeight = window.innerHeight;
+
 document.addEventListener("DOMContentLoaded", async () => {
   canvasEl = document.getElementById("canvas") as HTMLCanvasElement;
+
+  canvasEl.style.width = windowWidth + "px";
+  canvasEl.style.height = windowHeight + "px";
+
+  var scale = window.devicePixelRatio;
+  canvasEl.width = windowWidth * scale;
+  canvasEl.height = windowHeight * scale;
 
   canvasContext = canvasEl.getContext("2d");
 
@@ -36,6 +48,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
+  window.addEventListener("touchstart", e => {
+    touchStartY = e.changedTouches[0].clientY;
+  });
+
+  window.addEventListener("touchmove", e => {
+    window.requestAnimationFrame(() => {
+      clearCanvas();
+
+      maskScale = (() => {
+        const latestY = e.changedTouches[0].clientY;
+        const deltaY = touchStartY - latestY;
+        const next = maskScale - deltaY * 0.1;
+
+        return next >= 0 ? next : 0;
+      })();
+
+      draw(maskScale);
+    });
+  });
+
   draw(maskScale);
 });
 
@@ -53,8 +85,8 @@ function draw(scale: number) {
 
   canvasContext!.globalCompositeOperation = "destination-in";
 
-  const drawWidth = maskImage!.width * scale * 0.001;
-  const drawHeight = maskImage!.height * scale * 0.001;
+  const drawWidth = maskImage!.width * scale * 0.01;
+  const drawHeight = maskImage!.height * scale * 0.01;
 
   canvasContext!.drawImage(
     maskImage!,
